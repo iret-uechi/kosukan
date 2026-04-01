@@ -3,8 +3,8 @@ import { CATEGORIES, PLAN_GROUPS, CAT_COLORS, GROUP_COLORS, HOURS_PER_DAY, DAYS_
 import { getToday, addDays, formatDateWithWeekday } from "../utils/date";
 import { getTotalHoursForDate } from "../utils/calc";
 import { generateId } from "../utils/id";
-import { MemoField } from "./MemoField";
-import { useState, useRef, useEffect } from "react";
+import { EntryCard } from "./EntryCard";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface Props {
   data: AppData;
@@ -12,12 +12,6 @@ interface Props {
   selectedDate: string;
   onDateChange: (date: string) => void;
   onToast: (msg: string) => void;
-}
-
-function formatConversion(hours: number): string {
-  const days = hours / HOURS_PER_DAY;
-  const mm = days / DAYS_PER_MONTH;
-  return `${hours}h（${days.toFixed(2)}人日 / ${mm.toFixed(3)}人月）`;
 }
 
 // 「+」ボタン → カテゴリ選択ポップオーバー
@@ -107,7 +101,8 @@ function AddMenu({ categories, onSelect }: {
 }
 
 export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }: Props) {
-  const [, setRender] = useState(0);
+  // 新規追加されたエントリIDを追跡（編集モードで開始するため）
+  const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
 
   function getEntriesForCat(catId: string): TimeEntry[] {
     return data.entries.filter(
@@ -123,44 +118,43 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
   }
 
   function addEntry(catId: string) {
-    const newEntry: TimeEntry = {
-      id: generateId(),
-      date: selectedDate,
-      catId,
-      hours: 1,
-    };
+    const id = generateId();
+    const newEntry: TimeEntry = { id, date: selectedDate, catId, hours: 1 };
     onSave({ ...data, entries: [...data.entries, newEntry] });
-    onToast("追加しました");
-    setRender((n) => n + 1);
+    setNewEntryIds((prev) => new Set(prev).add(id));
   }
 
-  function updateEntryHours(entryId: string, value: string) {
+  const updateEntryHours = useCallback((entryId: string, value: string) => {
     const hours = parseFloat(value) || 0;
     if (hours <= 0) {
-      removeEntry(entryId);
+      const newEntries = data.entries.filter((e) => e.id !== entryId);
+      onSave({ ...data, entries: newEntries });
       return;
     }
     const newEntries = data.entries.map((e) =>
       e.id === entryId ? { ...e, hours } : e
     );
     onSave({ ...data, entries: newEntries });
-    onToast("保存しました");
-    setRender((n) => n + 1);
-  }
+    // 保存されたらnewフラグを消す
+    setNewEntryIds((prev) => {
+      const next = new Set(prev);
+      next.delete(entryId);
+      return next;
+    });
+  }, [data, onSave]);
 
-  function updateEntryMemo(entryId: string, memo: string) {
+  const updateEntryMemo = useCallback((entryId: string, memo: string) => {
     const newEntries = data.entries.map((e) =>
       e.id === entryId ? { ...e, memo: memo || undefined } : e
     );
     onSave({ ...data, entries: newEntries });
-  }
+  }, [data, onSave]);
 
-  function removeEntry(entryId: string) {
+  const removeEntry = useCallback((entryId: string) => {
     const newEntries = data.entries.filter((e) => e.id !== entryId);
     onSave({ ...data, entries: newEntries });
     onToast("削除しました");
-    setRender((n) => n + 1);
-  }
+  }, [data, onSave, onToast]);
 
   const totalHours = getTotalHoursForDate(data.entries, selectedDate);
   const totalDays = totalHours / HOURS_PER_DAY;
@@ -174,74 +168,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
     (c) => !PLAN_GROUPS.some((g) => g.id === c.groupId)
   );
 
-  // エントリカード
-  function renderEntryCard(entry: TimeEntry) {
-    return (
-      <div
-        key={entry.id}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 4,
-          padding: "8px 10px",
-          background: "#fff",
-          borderRadius: 8,
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <input
-            type="number"
-            step="0.25"
-            min="0"
-            value={entry.hours || ""}
-            placeholder="0"
-            onChange={(e) => updateEntryHours(entry.id, e.target.value)}
-            style={{
-              width: 56,
-              padding: "4px 6px",
-              borderRadius: 5,
-              border: "1px solid #e2e8f0",
-              background: "#f8fafc",
-              fontSize: 14,
-              textAlign: "right",
-            }}
-          />
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>h</span>
-          <span style={{ fontSize: 11, color: "#94a3b8", flex: 1 }}>
-            = {formatConversion(entry.hours)}
-          </span>
-          <button
-            onClick={() => removeEntry(entry.id)}
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 4,
-              border: "none",
-              background: "transparent",
-              color: "#cbd5e1",
-              fontSize: 14,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-            title="削除"
-          >
-            ×
-          </button>
-        </div>
-        <MemoField
-          value={entry.memo || ""}
-          onChange={(v) => updateEntryMemo(entry.id, v)}
-          onSave={() => onToast("保存しました")}
-        />
-      </div>
-    );
-  }
-
-  // サブカテゴリ行（運用保守など、エントリがある場合のみ表示）
+  // サブカテゴリ行（エントリがある場合のみ）
   function renderActiveCatRow(cat: typeof CATEGORIES[number], label: string, showBorder: boolean) {
     const entries = getEntriesForCat(cat.id);
     if (entries.length === 0) return null;
@@ -270,16 +197,20 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
           <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>
             計 {catTotal}h
           </span>
-          <button
-            onClick={() => addEntry(cat.id)}
-            style={plusIconStyle}
-            title="追加"
-          >
-            +
-          </button>
+          <button onClick={() => addEntry(cat.id)} style={plusIconStyle} title="追加">+</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
-          {entries.map(renderEntryCard)}
+          {entries.map((entry) => (
+            <EntryCard
+              key={entry.id}
+              entry={entry}
+              isNew={newEntryIds.has(entry.id)}
+              onUpdateHours={updateEntryHours}
+              onUpdateMemo={updateEntryMemo}
+              onRemove={removeEntry}
+              onToast={onToast}
+            />
+          ))}
         </div>
       </div>
     );
@@ -340,7 +271,6 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
         const groupTotal = getGroupTotalHours(group.id);
         const hasMultipleCats = categories.length > 1;
 
-        // メニュー用カテゴリリスト
         const menuItems = hasMultipleCats
           ? categories.map((c) => ({
               id: c.id,
@@ -396,7 +326,6 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
 
             {/* エントリ表示 */}
             {hasMultipleCats ? (
-              // サブカテゴリがあるグループ: エントリがあるカテゴリのみ表示
               (() => {
                 const activeCats = categories.filter(
                   (c) => getEntriesForCat(c.id).length > 0
@@ -411,14 +340,23 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
                 );
               })()
             ) : (
-              // 単一カテゴリ: エントリがあれば表示
               (() => {
                 const entries = getEntriesForCat(categories[0].id);
                 if (entries.length === 0) return null;
                 return (
                   <div style={{ padding: "8px 16px" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {entries.map(renderEntryCard)}
+                      {entries.map((entry) => (
+                        <EntryCard
+                          key={entry.id}
+                          entry={entry}
+                          isNew={newEntryIds.has(entry.id)}
+                          onUpdateHours={updateEntryHours}
+                          onUpdateMemo={updateEntryMemo}
+                          onRemove={removeEntry}
+                          onToast={onToast}
+                        />
+                      ))}
                     </div>
                   </div>
                 );
@@ -490,7 +428,17 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
                         <button onClick={() => addEntry(cat.id)} style={plusIconStyle} title="追加">+</button>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 18 }}>
-                        {entries.map(renderEntryCard)}
+                        {entries.map((entry) => (
+                          <EntryCard
+                            key={entry.id}
+                            entry={entry}
+                            isNew={newEntryIds.has(entry.id)}
+                            onUpdateHours={updateEntryHours}
+                            onUpdateMemo={updateEntryMemo}
+                            onRemove={removeEntry}
+                            onToast={onToast}
+                          />
+                        ))}
                       </div>
                     </div>
                   );
