@@ -6,8 +6,7 @@ import { renderMarkdown } from "../utils/markdown";
 interface Props {
   entry: TimeEntry;
   isNew?: boolean;
-  onUpdateHours: (id: string, value: string) => void;
-  onUpdateMemo: (id: string, memo: string) => void;
+  onUpdate: (id: string, hours: number, memo: string) => void;
   onRemove: (id: string) => void;
   onToast: (msg: string) => void;
 }
@@ -18,7 +17,7 @@ function formatConversion(hours: number): string {
   return `${hours}h（${days.toFixed(2)}人日 / ${mm.toFixed(3)}人月）`;
 }
 
-export function EntryCard({ entry, isNew, onUpdateHours, onUpdateMemo, onRemove, onToast }: Props) {
+export function EntryCard({ entry, isNew, onUpdate, onRemove, onToast }: Props) {
   const [editing, setEditing] = useState(!!isNew);
   const [localHours, setLocalHours] = useState(String(entry.hours));
   const [localMemo, setLocalMemo] = useState(entry.memo || "");
@@ -47,8 +46,7 @@ export function EntryCard({ entry, isNew, onUpdateHours, onUpdateMemo, onRemove,
       onRemove(entry.id);
       return;
     }
-    onUpdateHours(entry.id, localHours);
-    onUpdateMemo(entry.id, localMemo);
+    onUpdate(entry.id, hours, localMemo);
     setEditing(false);
     onToast("保存しました");
   }

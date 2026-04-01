@@ -124,30 +124,21 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
     setNewEntryIds((prev) => new Set(prev).add(id));
   }
 
-  const updateEntryHours = useCallback((entryId: string, value: string) => {
-    const hours = parseFloat(value) || 0;
+  const updateEntry = useCallback((entryId: string, hours: number, memo: string) => {
     if (hours <= 0) {
       const newEntries = data.entries.filter((e) => e.id !== entryId);
       onSave({ ...data, entries: newEntries });
       return;
     }
     const newEntries = data.entries.map((e) =>
-      e.id === entryId ? { ...e, hours } : e
+      e.id === entryId ? { ...e, hours, memo: memo || undefined } : e
     );
     onSave({ ...data, entries: newEntries });
-    // 保存されたらnewフラグを消す
     setNewEntryIds((prev) => {
       const next = new Set(prev);
       next.delete(entryId);
       return next;
     });
-  }, [data, onSave]);
-
-  const updateEntryMemo = useCallback((entryId: string, memo: string) => {
-    const newEntries = data.entries.map((e) =>
-      e.id === entryId ? { ...e, memo: memo || undefined } : e
-    );
-    onSave({ ...data, entries: newEntries });
   }, [data, onSave]);
 
   const removeEntry = useCallback((entryId: string) => {
@@ -205,8 +196,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
               key={entry.id}
               entry={entry}
               isNew={newEntryIds.has(entry.id)}
-              onUpdateHours={updateEntryHours}
-              onUpdateMemo={updateEntryMemo}
+              onUpdate={updateEntry}
               onRemove={removeEntry}
               onToast={onToast}
             />
@@ -351,8 +341,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
                           key={entry.id}
                           entry={entry}
                           isNew={newEntryIds.has(entry.id)}
-                          onUpdateHours={updateEntryHours}
-                          onUpdateMemo={updateEntryMemo}
+                          onUpdate={updateEntry}
                           onRemove={removeEntry}
                           onToast={onToast}
                         />
@@ -433,8 +422,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
                             key={entry.id}
                             entry={entry}
                             isNew={newEntryIds.has(entry.id)}
-                            onUpdateHours={updateEntryHours}
-                            onUpdateMemo={updateEntryMemo}
+                            onUpdate={updateEntry}
                             onRemove={removeEntry}
                             onToast={onToast}
                           />

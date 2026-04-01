@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <clipPath id="rounded">
+      <rect x="0" y="0" width="512" height="512" rx="96"/>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="96" fill="#1e293b"/>
+
+  <g clip-path="url(#rounded)">
+    <rect x="0" y="300" width="512" height="212" fill="#162032" opacity="0.6"/>
+
+    <!-- Plan bars (ghost) -->
+    <rect x="90" y="260" width="48" height="200" rx="4" fill="#2563eb" opacity="0.3"/>
+    <rect x="162" y="220" width="48" height="240" rx="4" fill="#7c3aed" opacity="0.3"/>
+    <rect x="234" y="180" width="48" height="280" rx="4" fill="#059669" opacity="0.3"/>
+    <rect x="306" y="140" width="48" height="320" rx="4" fill="#d97706" opacity="0.3"/>
+    <rect x="378" y="100" width="48" height="360" rx="4" fill="#2563eb" opacity="0.3"/>
+
+    <!-- Actual bars -->
+    <rect x="90" y="360" width="48" height="100" rx="4" fill="#2563eb"/>
+    <rect x="162" y="300" width="48" height="160" rx="4" fill="#7c3aed"/>
+    <rect x="234" y="240" width="48" height="220" rx="4" fill="#059669"/>
+    <rect x="306" y="290" width="48" height="170" rx="4" fill="#d97706"/>
+    <rect x="378" y="200" width="48" height="260" rx="4" fill="#2563eb"/>
+  </g>
+
+  <!-- Clock ring -->
+  <circle cx="256" cy="210" r="80" fill="none" stroke="#fff" stroke-width="5" opacity="0.9"/>
+  <circle cx="256" cy="210" r="5" fill="#fff"/>
+  <line x1="256" y1="210" x2="256" y2="152" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <line x1="256" y1="210" x2="292" y2="228" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Progress arc (66% fill) -->
+  <circle cx="256" cy="210" r="80" fill="none" stroke="#60a5fa" stroke-width="5" stroke-dasharray="502" stroke-dashoffset="170" stroke-linecap="round" transform="rotate(-90 256 210)"/>
+
+  <!-- Label -->
+  <text x="256" y="430" text-anchor="middle" font-family="'IBM Plex Sans JP','Noto Sans JP',system-ui,sans-serif" font-size="36" font-weight="500" fill="#94a3b8" letter-spacing="0.1em">予 実</text>
+</svg>
