@@ -1,7 +1,8 @@
 import type { AppData } from "../types";
-import { CATEGORIES, CAT_COLORS, HOURS_PER_DAY } from "../constants";
+import { CATEGORIES, CAT_COLORS, HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
 import { getUniqueDates, getTotalHoursForDate } from "../utils/calc";
 import { formatDateWithWeekday } from "../utils/date";
+import { renderMarkdown } from "../utils/markdown";
 
 interface Props {
   data: AppData;
@@ -33,6 +34,8 @@ export function History({ data, onSave, onEditDate, onToast }: Props) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {dates.map((date) => {
           const totalHours = getTotalHoursForDate(data.entries, date);
+          const totalDays = totalHours / HOURS_PER_DAY;
+          const totalMM = totalDays / DAYS_PER_MONTH;
           const entriesForDate = data.entries.filter((e) => e.date === date);
 
           return (
@@ -58,7 +61,7 @@ export function History({ data, onSave, onEditDate, onToast }: Props) {
                     {formatDateWithWeekday(date)}
                   </span>
                   <span style={{ fontSize: 13, color: "#64748b", marginLeft: 8 }}>
-                    {totalHours.toFixed(2)}h（{(totalHours / HOURS_PER_DAY).toFixed(2)}人日）
+                    {totalHours.toFixed(2)}h（{totalDays.toFixed(2)}人日 / {totalMM.toFixed(3)}人月）
                   </span>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
@@ -91,36 +94,44 @@ export function History({ data, onSave, onEditDate, onToast }: Props) {
                   </button>
                 </div>
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {entriesForDate.map((entry) => {
-                  const catIndex = CATEGORIES.findIndex((c) => c.id === entry.catId);
-                  const cat = CATEGORIES[catIndex];
+                  const cat = CATEGORIES.find((c) => c.id === entry.catId);
                   if (!cat) return null;
+                  const color = CAT_COLORS[cat.id] || "#64748b";
                   return (
-                    <span
-                      key={entry.catId}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "3px 10px",
-                        borderRadius: 20,
-                        background: `${CAT_COLORS[catIndex]}15`,
-                        color: CAT_COLORS[catIndex],
-                        fontSize: 12,
-                        fontWeight: 500,
-                      }}
-                    >
+                    <div key={entry.id} style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                       <span
                         style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          background: CAT_COLORS[catIndex],
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          padding: "3px 10px",
+                          borderRadius: 20,
+                          background: `${color}15`,
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: 500,
+                          flexShrink: 0,
                         }}
-                      />
-                      {cat.name} {entry.hours}h
-                    </span>
+                      >
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: color,
+                          }}
+                        />
+                        {cat.name} {entry.hours}h
+                      </span>
+                      {entry.memo && (
+                        <span
+                          style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5 }}
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(entry.memo) }}
+                        />
+                      )}
+                    </div>
                   );
                 })}
               </div>

@@ -1,13 +1,37 @@
 import type { TimeEntry, Plans } from "../types";
-import { HOURS_PER_DAY } from "../constants";
+import { HOURS_PER_DAY, DAYS_PER_MONTH, CATEGORIES } from "../constants";
 
 export function hoursToManDays(hours: number): number {
   return hours / HOURS_PER_DAY;
 }
 
+export function hoursToManMonths(hours: number): number {
+  return hours / HOURS_PER_DAY / DAYS_PER_MONTH;
+}
+
+export function manMonthsToHours(mm: number): number {
+  return mm * DAYS_PER_MONTH * HOURS_PER_DAY;
+}
+
 export function getTotalHoursForDate(entries: TimeEntry[], date: string): number {
   return entries
     .filter((e) => e.date === date)
+    .reduce((sum, e) => sum + e.hours, 0);
+}
+
+// グループに属する全カテゴリの実績時間を合算
+export function getActualHoursByGroup(
+  entries: TimeEntry[],
+  groupId: string,
+  monthFilter?: string
+): number {
+  const catIds = CATEGORIES.filter((c) => c.groupId === groupId).map((c) => c.id);
+  return entries
+    .filter(
+      (e) =>
+        catIds.includes(e.catId) &&
+        (!monthFilter || e.date.startsWith(monthFilter))
+    )
     .reduce((sum, e) => sum + e.hours, 0);
 }
 
@@ -42,7 +66,6 @@ export function getPlanForPeriod(
   plan: number,
   monthFilter?: string
 ): number {
-  // 月フィルタ時は計画値を1/6に按分
   return monthFilter ? plan / 6 : plan;
 }
 

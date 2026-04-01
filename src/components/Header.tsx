@@ -1,5 +1,5 @@
 import type { AppData } from "../types";
-import { HOURS_PER_DAY } from "../constants";
+import { HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
 import { getTotalPlan } from "../utils/calc";
 
 interface Props {
@@ -8,9 +8,9 @@ interface Props {
 
 export function Header({ data }: Props) {
   const totalActualHours = data.entries.reduce((s, e) => s + e.hours, 0);
-  const totalActualDays = totalActualHours / HOURS_PER_DAY;
-  const totalPlan = getTotalPlan(data.plans);
-  const rate = totalPlan > 0 ? (totalActualDays / totalPlan) * 100 : 0;
+  const totalActualMM = totalActualHours / HOURS_PER_DAY / DAYS_PER_MONTH;
+  const totalPlan = getTotalPlan(data.plans); // 人月
+  const rate = totalPlan > 0 ? (totalActualMM / totalPlan) * 100 : 0;
 
   return (
     <header

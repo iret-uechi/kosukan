@@ -1,8 +1,10 @@
 import type { AppData, TimeEntry } from "../types";
-import { CATEGORIES, CAT_COLORS, HOURS_PER_DAY } from "../constants";
+import { CATEGORIES, PLAN_GROUPS, CAT_COLORS, GROUP_COLORS, HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
 import { getToday, addDays, formatDateWithWeekday } from "../utils/date";
 import { getTotalHoursForDate } from "../utils/calc";
-import { useState } from "react";
+import { generateId } from "../utils/id";
+import { MemoField } from "./MemoField";
+import { useState, useRef, useEffect } from "react";
 
 interface Props {
   data: AppData;
@@ -12,47 +14,276 @@ interface Props {
   onToast: (msg: string) => void;
 }
 
+function formatConversion(hours: number): string {
+  const days = hours / HOURS_PER_DAY;
+  const mm = days / DAYS_PER_MONTH;
+  return `${hours}h（${days.toFixed(2)}人日 / ${mm.toFixed(3)}人月）`;
+}
+
+// 「+」ボタン → カテゴリ選択ポップオーバー
+function AddMenu({ categories, onSelect }: {
+  categories: { id: string; label: string; color: string }[];
+  onSelect: (catId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 6,
+          border: "1px solid #e2e8f0",
+          background: open ? "#f1f5f9" : "#fff",
+          fontSize: 16,
+          color: "#2563eb",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: 1,
+          flexShrink: 0,
+        }}
+        title="追加"
+      >
+        +
+      </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: 28,
+            right: 0,
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 8,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            zIndex: 50,
+            minWidth: 180,
+            padding: 4,
+          }}
+        >
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => { onSelect(c.id); setOpen(false); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                width: "100%",
+                padding: "7px 10px",
+                border: "none",
+                background: "transparent",
+                borderRadius: 6,
+                fontSize: 13,
+                color: "#334155",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+              onMouseEnter={(e) => { (e.target as HTMLElement).style.background = "#f8fafc"; }}
+              onMouseLeave={(e) => { (e.target as HTMLElement).style.background = "transparent"; }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }: Props) {
   const [, setRender] = useState(0);
 
-  function getHours(catId: string): number {
-    const entry = data.entries.find(
+  function getEntriesForCat(catId: string): TimeEntry[] {
+    return data.entries.filter(
       (e) => e.date === selectedDate && e.catId === catId
     );
-    return entry ? entry.hours : 0;
   }
 
-  function handleChange(catId: string, value: string) {
+  function getGroupTotalHours(groupId: string): number {
+    const catIds = CATEGORIES.filter((c) => c.groupId === groupId).map((c) => c.id);
+    return data.entries
+      .filter((e) => e.date === selectedDate && catIds.includes(e.catId))
+      .reduce((s, e) => s + e.hours, 0);
+  }
+
+  function addEntry(catId: string) {
+    const newEntry: TimeEntry = {
+      id: generateId(),
+      date: selectedDate,
+      catId,
+      hours: 1,
+    };
+    onSave({ ...data, entries: [...data.entries, newEntry] });
+    onToast("追加しました");
+    setRender((n) => n + 1);
+  }
+
+  function updateEntryHours(entryId: string, value: string) {
     const hours = parseFloat(value) || 0;
-    let newEntries: TimeEntry[];
-
-    if (hours === 0) {
-      // 0の場合はエントリを削除
-      newEntries = data.entries.filter(
-        (e) => !(e.date === selectedDate && e.catId === catId)
-      );
-    } else {
-      const existing = data.entries.find(
-        (e) => e.date === selectedDate && e.catId === catId
-      );
-      if (existing) {
-        newEntries = data.entries.map((e) =>
-          e.date === selectedDate && e.catId === catId
-            ? { ...e, hours }
-            : e
-        );
-      } else {
-        newEntries = [...data.entries, { date: selectedDate, catId, hours }];
-      }
+    if (hours <= 0) {
+      removeEntry(entryId);
+      return;
     }
-
+    const newEntries = data.entries.map((e) =>
+      e.id === entryId ? { ...e, hours } : e
+    );
     onSave({ ...data, entries: newEntries });
     onToast("保存しました");
     setRender((n) => n + 1);
   }
 
+  function updateEntryMemo(entryId: string, memo: string) {
+    const newEntries = data.entries.map((e) =>
+      e.id === entryId ? { ...e, memo: memo || undefined } : e
+    );
+    onSave({ ...data, entries: newEntries });
+  }
+
+  function removeEntry(entryId: string) {
+    const newEntries = data.entries.filter((e) => e.id !== entryId);
+    onSave({ ...data, entries: newEntries });
+    onToast("削除しました");
+    setRender((n) => n + 1);
+  }
+
   const totalHours = getTotalHoursForDate(data.entries, selectedDate);
   const totalDays = totalHours / HOURS_PER_DAY;
+  const totalMM = totalDays / DAYS_PER_MONTH;
+
+  const groupedSections = PLAN_GROUPS.map((group) => ({
+    group,
+    categories: CATEGORIES.filter((c) => c.groupId === group.id),
+  }));
+  const unplannedCategories = CATEGORIES.filter(
+    (c) => !PLAN_GROUPS.some((g) => g.id === c.groupId)
+  );
+
+  // エントリカード
+  function renderEntryCard(entry: TimeEntry) {
+    return (
+      <div
+        key={entry.id}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          padding: "8px 10px",
+          background: "#fff",
+          borderRadius: 8,
+          border: "1px solid #e9ecef",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input
+            type="number"
+            step="0.25"
+            min="0"
+            value={entry.hours || ""}
+            placeholder="0"
+            onChange={(e) => updateEntryHours(entry.id, e.target.value)}
+            style={{
+              width: 56,
+              padding: "4px 6px",
+              borderRadius: 5,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              fontSize: 14,
+              textAlign: "right",
+            }}
+          />
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>h</span>
+          <span style={{ fontSize: 11, color: "#94a3b8", flex: 1 }}>
+            = {formatConversion(entry.hours)}
+          </span>
+          <button
+            onClick={() => removeEntry(entry.id)}
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 4,
+              border: "none",
+              background: "transparent",
+              color: "#cbd5e1",
+              fontSize: 14,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+            title="削除"
+          >
+            ×
+          </button>
+        </div>
+        <MemoField
+          value={entry.memo || ""}
+          onChange={(v) => updateEntryMemo(entry.id, v)}
+          onSave={() => onToast("保存しました")}
+        />
+      </div>
+    );
+  }
+
+  // サブカテゴリ行（運用保守など、エントリがある場合のみ表示）
+  function renderActiveCatRow(cat: typeof CATEGORIES[number], label: string, showBorder: boolean) {
+    const entries = getEntriesForCat(cat.id);
+    if (entries.length === 0) return null;
+    const catTotal = entries.reduce((s, e) => s + e.hours, 0);
+    return (
+      <div
+        key={cat.id}
+        style={{
+          padding: "8px 16px 8px 28px",
+          borderBottom: showBorder ? "1px solid #f1f5f9" : "none",
+          background: "#fafbfc",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: CAT_COLORS[cat.id],
+              flexShrink: 0,
+              marginRight: 8,
+            }}
+          />
+          <span style={{ flex: 1, fontSize: 13, color: "#475569" }}>{label}</span>
+          <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>
+            計 {catTotal}h
+          </span>
+          <button
+            onClick={() => addEntry(cat.id)}
+            style={plusIconStyle}
+            title="追加"
+          >
+            +
+          </button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 16 }}>
+          {entries.map(renderEntryCard)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: 16 }}>
@@ -66,10 +297,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
           justifyContent: "center",
         }}
       >
-        <button
-          onClick={() => onDateChange(addDays(selectedDate, -1))}
-          style={navBtnStyle}
-        >
+        <button onClick={() => onDateChange(addDays(selectedDate, -1))} style={navBtnStyle}>
           ◀
         </button>
         <input
@@ -84,10 +312,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
             background: "#f8fafc",
           }}
         />
-        <button
-          onClick={() => onDateChange(addDays(selectedDate, 1))}
-          style={navBtnStyle}
-        >
+        <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={navBtnStyle}>
           ▶
         </button>
         <button
@@ -109,72 +334,187 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
         {formatDateWithWeekday(selectedDate)}
       </div>
 
-      {/* カテゴリ別入力 */}
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #e2e8f0",
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      >
-        {CATEGORIES.map((cat, i) => (
+      {/* ─── 計画グループ ─── */}
+      {groupedSections.map(({ group, categories }) => {
+        const groupColor = GROUP_COLORS[group.id] || "#64748b";
+        const groupTotal = getGroupTotalHours(group.id);
+        const hasMultipleCats = categories.length > 1;
+
+        // メニュー用カテゴリリスト
+        const menuItems = hasMultipleCats
+          ? categories.map((c) => ({
+              id: c.id,
+              label: c.name.replace(`${group.name}: `, ""),
+              color: CAT_COLORS[c.id] || groupColor,
+            }))
+          : [{ id: categories[0].id, label: group.name, color: groupColor }];
+
+        return (
           <div
-            key={cat.id}
+            key={group.id}
             style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "12px 16px",
-              borderBottom: i < CATEGORIES.length - 1 ? "1px solid #f1f5f9" : "none",
+              background: "#fff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              overflow: "visible",
+              marginBottom: 12,
+              borderLeft: `4px solid ${groupColor}`,
+              position: "relative",
             }}
           >
-            <span
+            {/* グループヘッダー */}
+            <div
               style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: CAT_COLORS[i],
-                flexShrink: 0,
-                marginRight: 10,
+                padding: "10px 16px",
+                background: `${groupColor}08`,
+                borderBottom: groupTotal > 0 ? "1px solid #f1f5f9" : "none",
+                display: "flex",
+                alignItems: "center",
+                borderRadius: "0 12px 0 0",
               }}
-            />
-            <span style={{ flex: 1, fontSize: 14 }}>{cat.name}</span>
-            <input
-              type="number"
-              step="0.25"
-              min="0"
-              value={getHours(cat.id) || ""}
-              placeholder="0"
-              onChange={(e) => handleChange(cat.id, e.target.value)}
-              style={{
-                width: 72,
-                padding: "6px 8px",
-                borderRadius: 6,
-                border: "1px solid #e2e8f0",
-                background: "#f8fafc",
-                fontSize: 15,
-                textAlign: "right",
-              }}
-            />
-            <span style={{ fontSize: 13, color: "#94a3b8", marginLeft: 4, width: 14 }}>h</span>
+            >
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: groupColor,
+                  marginRight: 8,
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
+                {group.name}
+              </span>
+              {groupTotal > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: groupColor, marginRight: 8 }}>
+                  {groupTotal}h
+                </span>
+              )}
+              <AddMenu categories={menuItems} onSelect={addEntry} />
+            </div>
+
+            {/* エントリ表示 */}
+            {hasMultipleCats ? (
+              // サブカテゴリがあるグループ: エントリがあるカテゴリのみ表示
+              (() => {
+                const activeCats = categories.filter(
+                  (c) => getEntriesForCat(c.id).length > 0
+                );
+                if (activeCats.length === 0) return null;
+                return activeCats.map((cat, i) =>
+                  renderActiveCatRow(
+                    cat,
+                    cat.name.replace(`${group.name}: `, ""),
+                    i < activeCats.length - 1
+                  )
+                );
+              })()
+            ) : (
+              // 単一カテゴリ: エントリがあれば表示
+              (() => {
+                const entries = getEntriesForCat(categories[0].id);
+                if (entries.length === 0) return null;
+                return (
+                  <div style={{ padding: "8px 16px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {entries.map(renderEntryCard)}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
-        ))}
-      </div>
+        );
+      })}
+
+      {/* ─── 計画外セクション ─── */}
+      {(() => {
+        const hasAnyUnplanned = unplannedCategories.some(
+          (c) => getEntriesForCat(c.id).length > 0
+        );
+        const menuItems = unplannedCategories.map((c) => ({
+          id: c.id,
+          label: c.name,
+          color: CAT_COLORS[c.id] || "#94a3b8",
+        }));
+
+        return (
+          <div style={{ marginTop: 20, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ height: 1, flex: 1, background: "#e2e8f0" }} />
+              <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, letterSpacing: 1 }}>
+                計画外
+              </span>
+              <div style={{ height: 1, flex: 1, background: "#e2e8f0" }} />
+              <AddMenu categories={menuItems} onSelect={addEntry} />
+            </div>
+
+            {hasAnyUnplanned && (
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  borderLeft: "4px solid #cbd5e1",
+                }}
+              >
+                {unplannedCategories.map((cat, i) => {
+                  const entries = getEntriesForCat(cat.id);
+                  if (entries.length === 0) return null;
+                  const catTotal = entries.reduce((s, e) => s + e.hours, 0);
+                  return (
+                    <div
+                      key={cat.id}
+                      style={{
+                        padding: "10px 16px",
+                        borderBottom: i < unplannedCategories.length - 1 ? "1px solid #f1f5f9" : "none",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            background: CAT_COLORS[cat.id],
+                            flexShrink: 0,
+                            marginRight: 8,
+                          }}
+                        />
+                        <span style={{ flex: 1, fontSize: 14, color: "#1e293b" }}>{cat.name}</span>
+                        <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>
+                          計 {catTotal}h
+                        </span>
+                        <button onClick={() => addEntry(cat.id)} style={plusIconStyle} title="追加">+</button>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginLeft: 18 }}>
+                        {entries.map(renderEntryCard)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* 当日合計 */}
       <div
         style={{
-          marginTop: 16,
+          marginTop: 4,
           padding: "12px 16px",
-          background: "#f8fafc",
+          background: "linear-gradient(135deg, #1e293b, #334155)",
           borderRadius: 10,
           textAlign: "center",
           fontSize: 15,
           fontWeight: 600,
-          color: "#334155",
+          color: "#fff",
         }}
       >
-        本日合計: {totalHours.toFixed(2)}h（{totalDays.toFixed(2)} 人日）
+        本日合計: {totalHours}h（{totalDays.toFixed(2)}人日 / {totalMM.toFixed(3)}人月）
       </div>
     </div>
   );
@@ -191,4 +531,21 @@ const navBtnStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+};
+
+const plusIconStyle: React.CSSProperties = {
+  width: 22,
+  height: 22,
+  borderRadius: 5,
+  border: "1px solid #e2e8f0",
+  background: "#fff",
+  fontSize: 15,
+  color: "#2563eb",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  lineHeight: 1,
+  flexShrink: 0,
+  padding: 0,
 };
