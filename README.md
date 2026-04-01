@@ -1,14 +1,14 @@
-# actual-manager
+# kosukan（工数管）
 
 FY26 上期（2026年4月〜9月）の個人工数 予実管理ツール。
 
-計画工数（人月）に対して日々の作業実績を記録し、カテゴリ別の消化率をリアルタイムで可視化する。
+計画工数（人月）に対して日々の作業実績をマイクロに記録し、カテゴリ別の消化率をリアルタイムで可視化する。
 
 ## セットアップ
 
 ```bash
 git clone git@github.com:<your-username>/kosukan.git
-cd actual-manager
+cd kosukan
 npm install
 ```
 
