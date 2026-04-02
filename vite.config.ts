@@ -5,4 +5,8 @@ import { csvApiPlugin } from './server/csv-api'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), csvApiPlugin()],
+  server: {
+    port: 4649,
+    strictPort: true,
+  },
 })
