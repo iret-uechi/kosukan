@@ -1,6 +1,7 @@
 import type { AppData, TimeEntry } from "../types";
 import { CATEGORIES, PLAN_GROUPS, CAT_COLORS, GROUP_COLORS, HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
-import { getToday, addDays, formatDateWithWeekday } from "../utils/date";
+import { getToday, formatDateWithWeekday } from "../utils/date";
+import { nextWorkday } from "../utils/holidays";
 import { getTotalHoursForDate } from "../utils/calc";
 import { generateId } from "../utils/id";
 import { EntryCard } from "./EntryCard";
@@ -218,7 +219,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
           justifyContent: "center",
         }}
       >
-        <button onClick={() => onDateChange(addDays(selectedDate, -1))} style={navBtnStyle}>
+        <button onClick={() => onDateChange(nextWorkday(selectedDate, -1))} style={navBtnStyle}>
           ◀
         </button>
         <input
@@ -233,7 +234,7 @@ export function DailyEntry({ data, onSave, selectedDate, onDateChange, onToast }
             background: "#f8fafc",
           }}
         />
-        <button onClick={() => onDateChange(addDays(selectedDate, 1))} style={navBtnStyle}>
+        <button onClick={() => onDateChange(nextWorkday(selectedDate, 1))} style={navBtnStyle}>
           ▶
         </button>
         <button
