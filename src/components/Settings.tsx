@@ -150,22 +150,38 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
         </div>
       </div>
 
-      {/* マスターデータ参照（必要に応じてURLを設定） */}
-      <div
-        style={{
-          marginTop: 20,
-          background: "#fff",
-          border: "1px solid #e2e8f0",
-          borderRadius: 10,
-          padding: "12px 16px",
-          fontSize: 13,
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 6, color: "#475569" }}>工数割振り根拠</div>
-        <span style={{ color: "#94a3b8", fontSize: 13 }}>
-          工数割振りマスターのリンクを設定してください
-        </span>
-      </div>
+      {/* マスターデータ参照（.env.local の VITE_SPREADSHEET_URL で設定） */}
+      {import.meta.env.VITE_SPREADSHEET_URL && (
+        <div
+          style={{
+            marginTop: 20,
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 10,
+            padding: "12px 16px",
+            fontSize: 13,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6, color: "#475569" }}>工数割振り根拠</div>
+          <a
+            href={import.meta.env.VITE_SPREADSHEET_URL}
+            target="_blank"
+            rel="noopener"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#2563eb",
+              textDecoration: "none",
+              fontSize: 13,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>&#x1F4CA;</span>
+            工数割振りマスター（Google Sheets）
+            <span style={{ fontSize: 11, color: "#94a3b8" }}>&#x2197;</span>
+          </a>
+        </div>
+      )}
 
       {/* 換算表 */}
       <div

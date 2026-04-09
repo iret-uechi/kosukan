@@ -10,6 +10,7 @@ FY26 上期（2026年4月〜9月）の個人工数 予実管理ツール。
 git clone git@github.com:<your-username>/kosukan.git
 cd kosukan
 npm install
+cp .env.example .env.local  # 必要に応じてスプレッドシートURLを設定
 ```
 
 ## 起動
@@ -55,7 +56,7 @@ npm run dev
 ### 設定タブ
 
 - **計画工数の編集**: グループ別の人月配分を変更
-- **工数割振り根拠**: マスターデータのスプレッドシートへのリンク
+- **工数割振り根拠**: マスターデータへのリンク（`.env.local` で設定）
 - **CSVエクスポート / インポート**: データのバックアップ・復元
 - **全データリセット**
 
@@ -65,11 +66,11 @@ npm run dev
 
 | 保存先 | ファイル | 用途 |
 |--------|----------|------|
-| ファイル | `data/workload.csv` | 実績データ（Git管理可能） |
-| ファイル | `data/plans.json` | 計画値 |
+| ファイル | `data/workload.csv` | 実績データ（`.gitignore` 対象） |
+| ファイル | `data/plans.json` | 計画値（`.gitignore` 対象） |
 | ブラウザ | localStorage | フォールバック |
 
-`data/` 配下をコミットすることで、データの履歴管理ができる。
+`data/workload.csv` と `data/plans.json` はユーザー固有データのため `.gitignore` に含まれている。フォーマットは `data/workload.sample.csv` を参照。
 
 ### CSVフォーマット
 

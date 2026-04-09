@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# ユーザーデータ（秘匿情報を含むためGit管理外）
+data/workload.csv
+data/plans.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
