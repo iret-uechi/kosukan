@@ -2,7 +2,7 @@ import type { AppData } from "../types";
 import { PLAN_GROUPS, GROUP_COLORS, DAYS_PER_MONTH, HOURS_PER_DAY } from "../constants";
 import { getTotalPlan } from "../utils/calc";
 import { downloadCsv, parseCsv } from "../utils/csv";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 interface Props {
   data: AppData;
@@ -11,8 +11,23 @@ interface Props {
   onToast: (msg: string) => void;
 }
 
+const SPREADSHEET_URL_KEY = "fy26h1-spreadsheet-url";
+
 export function Settings({ data, onSave, onReset, onToast }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState(
+    () => localStorage.getItem(SPREADSHEET_URL_KEY) || import.meta.env.VITE_SPREADSHEET_URL || ""
+  );
+
+  function handleUrlSave(url: string) {
+    setSpreadsheetUrl(url);
+    if (url) {
+      localStorage.setItem(SPREADSHEET_URL_KEY, url);
+    } else {
+      localStorage.removeItem(SPREADSHEET_URL_KEY);
+    }
+    onToast("スプレッドシートURLを更新しました");
+  }
 
   function handlePlanChange(groupId: string, value: string) {
     const plan = parseFloat(value) || 0;
@@ -150,38 +165,46 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
         </div>
       </div>
 
-      {/* マスターデータ参照（.env.local の VITE_SPREADSHEET_URL で設定） */}
-      {import.meta.env.VITE_SPREADSHEET_URL && (
-        <div
-          style={{
-            marginTop: 20,
-            background: "#fff",
-            border: "1px solid #e2e8f0",
-            borderRadius: 10,
-            padding: "12px 16px",
-            fontSize: 13,
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 6, color: "#475569" }}>工数割振り根拠</div>
-          <a
-            href={import.meta.env.VITE_SPREADSHEET_URL}
-            target="_blank"
-            rel="noopener"
+      {/* マスターデータ参照 */}
+      <div
+        style={{
+          marginTop: 20,
+          background: "#fff",
+          border: "1px solid #e2e8f0",
+          borderRadius: 10,
+          padding: "12px 16px",
+          fontSize: 13,
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: 6, color: "#475569" }}>工数割振り根拠</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            type="url"
+            placeholder="スプレッドシートのURLを入力"
+            value={spreadsheetUrl}
+            onChange={(e) => setSpreadsheetUrl(e.target.value)}
+            onBlur={(e) => handleUrlSave(e.target.value)}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              color: "#2563eb",
-              textDecoration: "none",
+              flex: 1,
+              padding: "6px 8px",
+              borderRadius: 6,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
               fontSize: 13,
             }}
-          >
-            <span style={{ fontSize: 16 }}>&#x1F4CA;</span>
-            工数割振りマスター（Google Sheets）
-            <span style={{ fontSize: 11, color: "#94a3b8" }}>&#x2197;</span>
-          </a>
+          />
+          {spreadsheetUrl && (
+            <a
+              href={spreadsheetUrl}
+              target="_blank"
+              rel="noopener"
+              style={{ color: "#2563eb", fontSize: 13, whiteSpace: "nowrap" }}
+            >
+              開く &#x2197;
+            </a>
+          )}
         </div>
-      )}
+      </div>
 
       {/* 換算表 */}
       <div
