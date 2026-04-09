@@ -150,7 +150,7 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
         </div>
       </div>
 
-      {/* マスターデータ参照 */}
+      {/* マスターデータ参照（必要に応じてURLを設定） */}
       <div
         style={{
           marginTop: 20,
@@ -162,23 +162,9 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
         }}
       >
         <div style={{ fontWeight: 600, marginBottom: 6, color: "#475569" }}>工数割振り根拠</div>
-        <a
-          href="https://example.com/your-spreadsheet"
-          target="_blank"
-          rel="noopener"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            color: "#2563eb",
-            textDecoration: "none",
-            fontSize: 13,
-          }}
-        >
-          <span style={{ fontSize: 16 }}>&#x1F4CA;</span>
-          FY26上期 工数割振りマスター（Google Sheets）
-          <span style={{ fontSize: 11, color: "#94a3b8" }}>&#x2197;</span>
-        </a>
+        <span style={{ color: "#94a3b8", fontSize: 13 }}>
+          工数割振りマスターのリンクを設定してください
+        </span>
       </div>
 
       {/* 換算表 */}
