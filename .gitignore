@@ -15,6 +15,7 @@ dist-ssr
 # ユーザーデータ（秘匿情報を含むためGit管理外）
 data/workload.csv
 data/plans.json
+data/backups/
 
 # Editor directories and files
 .vscode/*
