@@ -2,6 +2,7 @@ import type { AppData } from "../types";
 import { PLAN_GROUPS, GROUP_COLORS, DAYS_PER_MONTH, HOURS_PER_DAY } from "../constants";
 import { getTotalPlan } from "../utils/calc";
 import { downloadCsv, parseCsv } from "../utils/csv";
+import { downloadJsonBackup, parseBackup } from "../utils/backup";
 import { useRef, useState } from "react";
 
 interface Props {
@@ -15,6 +16,7 @@ const SPREADSHEET_URL_KEY = "fy26h1-spreadsheet-url";
 
 export function Settings({ data, onSave, onReset, onToast }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState(
     () => localStorage.getItem(SPREADSHEET_URL_KEY) || import.meta.env.VITE_SPREADSHEET_URL || ""
   );
@@ -77,6 +79,43 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
     };
     reader.readAsText(file);
     // 同じファイルの再選択を可能にする
+    e.target.value = "";
+  }
+
+  function handleJsonExport() {
+    downloadJsonBackup(data, spreadsheetUrl);
+    onToast("バックアップ（JSON）をダウンロードしました");
+  }
+
+  function handleJsonImport() {
+    jsonInputRef.current?.click();
+  }
+
+  function handleJsonFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const result = parseBackup(text);
+      if (!result.ok) {
+        onToast(`インポート失敗: ${result.error}`);
+        return;
+      }
+      const totalEntries = result.backup.data.entries.length;
+      const confirmed = window.confirm(
+        `バックアップを復元します（${totalEntries}件）。\n` +
+          `現在のデータは上書きされます。よろしいですか？`
+      );
+      if (!confirmed) return;
+      onSave(result.backup.data);
+      if (result.backup.spreadsheetUrl !== undefined) {
+        handleUrlSave(result.backup.spreadsheetUrl);
+      }
+      onToast(`バックアップを復元しました（${totalEntries}件）`);
+    };
+    reader.readAsText(file);
     e.target.value = "";
   }
 
@@ -278,6 +317,61 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
             accept=".csv"
             style={{ display: "none" }}
             onChange={handleFileChange}
+          />
+        </div>
+      </div>
+
+      {/* JSON バックアップ / 復元 */}
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e2e8f0",
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 16,
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>バックアップ（JSON）</div>
+        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 12, marginTop: 0 }}>
+          実績・計画値・スプレッドシートURLを 1 ファイルにまとめて保存・復元します。別端末への移行や定期バックアップにご利用ください。
+        </p>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handleJsonExport}
+            style={{
+              padding: "8px 20px",
+              borderRadius: 8,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              color: "#334155",
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            バックアップ取得
+          </button>
+          <button
+            onClick={handleJsonImport}
+            style={{
+              padding: "8px 20px",
+              borderRadius: 8,
+              border: "1px solid #e2e8f0",
+              background: "#f8fafc",
+              color: "#334155",
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            バックアップ復元
+          </button>
+          <input
+            ref={jsonInputRef}
+            type="file"
+            accept=".json,application/json"
+            style={{ display: "none" }}
+            onChange={handleJsonFileChange}
           />
         </div>
       </div>

@@ -8,21 +8,28 @@
 GitHub Flow を使用する
 
 ## 技術スタック
-- React 18 + TypeScript + Vite
-- データ永続化: localStorage（バックエンド不要）
+- React 19 + TypeScript + Vite
+- データ永続化: localStorage 単独（バックエンド不要、静的デプロイ可）
 - スタイリング: CSS Modules またはインラインスタイル（Tailwind不使用）
 
+## デプロイモデル
+- 静的 SPA として配布。Vercel など静的ホスティングに乗せる前提。
+- 利用者は repo を template として使い、自分の URL にデプロイして利用する。
+- 各利用者のデータは、それぞれの origin の localStorage に保持される（サーバー共有なし）。
+
 ## 開発コマンド
-- `npm run dev` — 開発サーバー起動
+- `npm run dev` — 開発サーバー起動（ポート 4649）
 - `npm run build` — プロダクションビルド
 - `npm run preview` — ビルド結果プレビュー
+- `npm run lint` — ESLint 実行
 
 ## ディレクトリ構造
 - `src/components/` — UI コンポーネント（タブごとに分割）
 - `src/hooks/` — カスタム hooks（useStorage）
-- `src/utils/` — 日付・計算ユーティリティ
+- `src/utils/` — 日付・計算ユーティリティ、CSV/JSON ポータビリティ（backup.ts）
 - `src/types.ts` — 型定義
 - `src/constants.ts` — カテゴリ・月・色の定義
+- `docs/adr/` — Architecture Decision Records
 
 ## 重要な設計判断
 - 2層構造: PlanGroup（予算管理単位）と Category（日次入力単位）

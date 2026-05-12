@@ -104,11 +104,6 @@ export function downloadCsv(data: AppData) {
   URL.revokeObjectURL(url);
 }
 
-// サーバー保存用CSV（BOM付き）
-export function exportToCsvWithBom(data: AppData): string {
-  return BOM + exportToCsv(data);
-}
-
 /**
  * RFC 4180準拠のCSVパーサー
  * ダブルクォート内の改行（マルチラインフィールド）に対応
