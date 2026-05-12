@@ -1,5 +1,5 @@
 import type { AppData } from "../types";
-import { CATEGORIES, HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
+import { CATEGORIES, HOURS_PER_DAY, DAYS_PER_MONTH, PLAN_GROUPS, PLANLESS_GROUP_NAMES } from "../constants";
 import { generateId } from "./id";
 
 /**
@@ -16,7 +16,7 @@ import { generateId } from "./id";
  * | # | カラム名     | 型     | 説明                              |
  * |---|-------------|--------|-----------------------------------|
  * | 1 | 日付         | string | YYYY-MM-DD形式                    |
- * | 2 | カテゴリID    | string | 内部識別子（ams_task等）            |
+ * | 2 | カテゴリID    | string | 内部識別子                         |
  * | 3 | カテゴリ名    | string | 表示名                            |
  * | 4 | グループID    | string | 計画グループの識別子               |
  * | 5 | グループ名    | string | 計画グループの表示名               |
@@ -78,16 +78,9 @@ export function exportToCsv(data: AppData): string {
 }
 
 function getGroupName(groupId: string): string {
-  const names: Record<string, string> = {
-    ams_task: "AMS課題対応",
-    ext_mon: "External Monitoring",
-    eol: "各種EOL対応",
-    mail_hando: "メール通知引継",
-    ops: "運用保守",
-    indirect: "間接業務",
-    leave: "有休",
-  };
-  return names[groupId] || groupId;
+  const fromPlan = PLAN_GROUPS.find((g) => g.id === groupId);
+  if (fromPlan) return fromPlan.name;
+  return PLANLESS_GROUP_NAMES[groupId] || groupId;
 }
 
 // CSVファイルをダウンロード（BOM付き）

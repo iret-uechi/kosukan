@@ -12,14 +12,24 @@ interface Props {
   onToast: (msg: string) => void;
 }
 
-const SPREADSHEET_URL_KEY = "fy26h1-spreadsheet-url";
+const SPREADSHEET_URL_KEY = "workload-tracker-spreadsheet-url";
+const LEGACY_SPREADSHEET_URL_KEYS = ["fy26h1-spreadsheet-url"];
 
 export function Settings({ data, onSave, onReset, onToast }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState(
-    () => localStorage.getItem(SPREADSHEET_URL_KEY) || import.meta.env.VITE_SPREADSHEET_URL || ""
-  );
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState(() => {
+    const current = localStorage.getItem(SPREADSHEET_URL_KEY);
+    if (current) return current;
+    for (const legacy of LEGACY_SPREADSHEET_URL_KEYS) {
+      const legacyVal = localStorage.getItem(legacy);
+      if (legacyVal) {
+        localStorage.setItem(SPREADSHEET_URL_KEY, legacyVal);
+        return legacyVal;
+      }
+    }
+    return import.meta.env.VITE_SPREADSHEET_URL || "";
+  });
 
   function handleUrlSave(url: string) {
     setSpreadsheetUrl(url);
