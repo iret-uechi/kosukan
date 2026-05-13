@@ -32,13 +32,11 @@ export function EntryCard({ entry, isNew, onUpdate, onRemove, onToast }: Props) 
     }
   }, [editing]);
 
-  // 外部からのentry変更を反映
-  useEffect(() => {
-    if (!editing) {
-      setLocalHours(String(entry.hours));
-      setLocalMemo(entry.memo || "");
-    }
-  }, [entry.hours, entry.memo, editing]);
+  function beginEdit() {
+    setLocalHours(String(entry.hours));
+    setLocalMemo(entry.memo || "");
+    setEditing(true);
+  }
 
   function handleSave() {
     const hours = parseFloat(localHours) || 0;
@@ -157,7 +155,7 @@ export function EntryCard({ entry, isNew, onUpdate, onRemove, onToast }: Props) 
           {formatConversion(entry.hours)}
         </span>
         <button
-          onClick={() => setEditing(true)}
+          onClick={beginEdit}
           style={iconBtnStyle}
           title="編集"
         >

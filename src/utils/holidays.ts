@@ -1,4 +1,6 @@
-// 2026年度 上期（4月〜9月）の祝日
+// 対象期間の祝日一覧。
+// テンプレ初期値として 2026年度 上期（4月〜9月）の日本祝日を入れています。
+// 利用者は自身の対象期間に合わせて、この配列と下の getHolidayName の対応表を更新してください。
 const HOLIDAYS_2026H1: string[] = [
   "2026-04-29", // 昭和の日
   "2026-05-03", // 憲法記念日
@@ -44,7 +46,7 @@ export function getHolidayName(dateStr: string): string | null {
 
 // 次の営業日を返す（direction: 1=未来、-1=過去）
 export function nextWorkday(dateStr: string, direction: 1 | -1): string {
-  let d = new Date(dateStr + "T00:00:00");
+  const d = new Date(dateStr + "T00:00:00");
   do {
     d.setDate(d.getDate() + direction);
   } while (isNonWorkday(formatDate(d)));

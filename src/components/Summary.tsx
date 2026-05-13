@@ -69,7 +69,7 @@ export function Summary({ data }: Props) {
           const isOver = remaining < 0;
           const color = GROUP_COLORS[group.id] || "#64748b";
 
-          // 運用保守のサブカテゴリ内訳
+          // サブカテゴリ内訳（同一グループ内に複数カテゴリがある場合）
           const subCategories = CATEGORIES.filter((c) => c.groupId === group.id);
           const hasSubCategories = subCategories.length > 1;
 
@@ -118,7 +118,7 @@ export function Summary({ data }: Props) {
                 </span>
               </div>
 
-              {/* サブカテゴリ内訳（運用保守など） */}
+              {/* サブカテゴリ内訳 */}
               {hasSubCategories && actualHours > 0 && (
                 <div
                   style={{
