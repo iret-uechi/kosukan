@@ -92,14 +92,14 @@
 | レイヤ | 対象 | 解決策 |
 | --- | --- | --- |
 | L1. 日次データ | 工数実績・計画値 | O1 の localStorage 化で **repo にデータファイルが存在しない** 状態にする（構造的解決） |
-| L2. 業務固有 config | `src/constants.ts` の `PLAN_GROUPS`、`src/utils/holidays.ts`、`CLAUDE.md` の運用保守内訳記述、`package.json` の `fy26h1-tracker` 名称 | 短期: generic 化 + `src/constants.local.ts`（gitignore）で override / 長期: UI 編集化 |
+| L2. 業務固有 config | `src/constants.ts` の `PLAN_GROUPS`、`src/utils/holidays.ts`、`CLAUDE.md` の業務内訳記述、`package.json` の旧 tracker 名称 | 短期: generic 化 + `src/constants.local.ts`（gitignore）で override / 長期: UI 編集化 |
 | L3. 個人インスタンス URL | メンテナ自身の運用先 | 公開 repo とは別に、template から立てる private インスタンスを別途デプロイ（同タイミングで作成する） |
 
 ### L2 棚卸し対象（再公開前に generic 化する候補）
 
-- `src/constants.ts` — `PLAN_GROUPS` 内の固有カテゴリ名・運用保守サービス分類
+- `src/constants.ts` — `PLAN_GROUPS` 内の固有カテゴリ名・業務分類
 - `src/utils/holidays.ts` — 独自休業日が含まれているか確認
-- `CLAUDE.md` — Abuse / AMS / メール通知 / ExtMon 等の具体名
+- `CLAUDE.md` — 具体的なプロジェクト名やサービス分類
 - `README.md` — 個人/組織を特定できる記述
 - `package.json` の `name`、`index.html` の `<title>`（"FY26 上期" は generic に置換するか検討）
 - `.env.example` の参考 URL / コメント
@@ -207,4 +207,3 @@
 
 - 過去履歴の sensitive data 残存 → **新規 repo を clean state で立て直す** ことで対応（履歴 scrub は採用しない）。
 - メンテナ自身の運用インスタンス → 公開 repo とは別に、**再公開と同タイミングで** private "Use this template" インスタンスを作成。
-

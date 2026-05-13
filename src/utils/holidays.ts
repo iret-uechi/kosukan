@@ -46,7 +46,7 @@ export function getHolidayName(dateStr: string): string | null {
 
 // 次の営業日を返す（direction: 1=未来、-1=過去）
 export function nextWorkday(dateStr: string, direction: 1 | -1): string {
-  let d = new Date(dateStr + "T00:00:00");
+  const d = new Date(dateStr + "T00:00:00");
   do {
     d.setDate(d.getDate() + direction);
   } while (isNonWorkday(formatDate(d)));

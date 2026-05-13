@@ -16,6 +16,7 @@ dist-ssr
 data/workload.csv
 data/plans.json
 data/backups/
+src/constants.local.ts
 
 # Editor directories and files
 .vscode/*

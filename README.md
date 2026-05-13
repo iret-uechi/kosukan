@@ -4,7 +4,7 @@
 
 - データは利用者のブラウザ localStorage に保存（バックエンド不要）
 - 静的 SPA として配布、Vercel などへ 1 クリックでデプロイ
-- カテゴリ・計画値は `src/constants.ts` を直接編集してカスタマイズ
+- カテゴリ・計画値は `src/constants.ts` でカスタマイズ可能
 
 ## 使い始める
 
@@ -28,7 +28,9 @@ npm run dev
 
 ## カスタマイズ
 
-ほとんどのカスタマイズは `src/constants.ts` で完結します:
+公開テンプレの既定値は `src/constants.ts` にあります。デプロイ先へ反映したい値は、このファイルを編集して commit してください。
+
+ローカルだけで試したい値は、`src/constants.local.example.ts` を `src/constants.local.ts` にコピーして上書きできます。`src/constants.local.ts` は git 管理外で、存在する場合だけ `src/constants.ts` より優先されます。
 
 | 定数 | 内容 |
 |---|---|

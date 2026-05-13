@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 個人の工数予実管理ツール。半期単位のタスク別計画工数に対して日次の作業実績を記録し、消化率を可視化する。
-公開リポジトリではテンプレ既定値（プロジェクトA/B/C + 運用業務 など）を入れているため、fork 後は `src/constants.ts` 等を自身の業務カテゴリに書き換えて利用する。
+公開リポジトリではテンプレ既定値（プロジェクトA/B/C + 運用業務 など）を入れている。fork 後、デプロイ先へ反映したいカテゴリは `src/constants.ts` を書き換える。ローカルだけで試す値は `src/constants.local.example.ts` を `src/constants.local.ts` にコピーして override できる（`src/constants.local.ts` は git 管理外）。
 
 ## ブランチ戦略
 GitHub Flow を使用する
@@ -28,7 +28,8 @@ GitHub Flow を使用する
 - `src/hooks/` — カスタム hooks（useStorage）
 - `src/utils/` — 日付・計算ユーティリティ、CSV/JSON ポータビリティ（backup.ts）
 - `src/types.ts` — 型定義
-- `src/constants.ts` — カテゴリ・月・色の定義
+- `src/constants.ts` — テンプレ既定のカテゴリ・月・色の定義
+- `src/constants.local.example.ts` — git 管理外 override 用サンプル
 - `docs/adr/` — Architecture Decision Records
 
 ## 重要な設計判断
@@ -41,6 +42,7 @@ GitHub Flow を使用する
 - 月別フィルタ時の計画値は上期計画 ÷ 6 で均等按分
 - 1グループに複数カテゴリ（サブカテゴリ）を持たせる構造をサポート（例: 運用業務をサブカテゴリで分割）
 - 計画値を持たない記録専用グループ（間接業務 / 有休 など）は `PLANLESS_GROUP_NAMES` で定義
+- 自分用のカテゴリ・計画値・対象月・配色は `src/constants.local.ts` が存在する場合に優先される
 
 ## コーディング規約
 - コンポーネントは関数コンポーネント + hooks
