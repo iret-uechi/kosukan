@@ -76,9 +76,18 @@
 
 1. 利用者がこの repo を **fork**。
 2. README の "Deploy to Vercel" ボタン or Vercel ダッシュボードから fork を import。
-3. ビルド設定はデフォルト（Vite 自動検出）。デプロイ完了で `<username>-kosukan.vercel.app` 等の個人 URL が払い出される。
+3. Vercel project name は `workload-tracker-<owner-slug>-<random8>` 形式で作る。ビルド設定はデフォルト（Vite 自動検出）。デプロイ完了で `<project-name>.vercel.app` 等の個人 URL が払い出される。
 4. その URL を開く → ブラウザの localStorage（その URL スコープ）に予実が貯まる。
 5. バックアップ: 設定画面の「エクスポート」ボタンで JSON を手元にダウンロード。復元は「インポート」から。
+
+### Vercel project name / URL convention
+
+- Vercel の `*.vercel.app` URL は project name をもとに割り当てられ、先着順で予約できない。
+- 生成 URL にも project name が含まれるため、公開テンプレートの利用者には bare name を使わせない。
+- 推奨 project name は `workload-tracker-<owner-slug>-<random8>`。
+- `<random8>` は `openssl rand -hex 4` などで作る 8 桁 lowercase hex とする。
+- 会社名、顧客名、案件名、内部コード、secret に近い値は入れない。
+- URL 変更は localStorage の origin 変更を伴うため、運用開始後の rename は JSON エクスポート後に行う。
 
 ### データ分離
 
@@ -152,7 +161,7 @@
 
 7. L2 棚卸しを実施し、`src/constants.local.ts` override 機構を実装（generic default + ローカル上書き）。
 8. `CLAUDE.md` / `README.md` を generic 化し、`package.json` `name` を public 向けに改名。
-9. `README.md` に Deploy to Vercel ボタン、"Use this template" 手順、バックアップ運用、ライセンス、貢献ガイドを記載。
+9. `README.md` に Deploy to Vercel ボタン、"Use this template" 手順、Vercel project name 命名規則、バックアップ運用、ライセンス、貢献ガイドを記載。
 10. `vercel.json`（必要なら SPA fallback）と、`gitleaks` GitHub Actions を追加。
 
 ### Phase 3: 再公開（新規 repo 作成と切替）
