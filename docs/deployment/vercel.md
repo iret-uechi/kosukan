@@ -1,6 +1,6 @@
 # Vercel デプロイ手順
 
-このアプリは Vite SPA として静的ビルドし、Vercel にそのまま配信します。バックエンド、DB、Vercel Functions、環境変数は不要です。
+このアプリは Vite SPA として静的ビルドし、Vercel に配信します。標準構成ではバックエンド、DB、環境変数は不要です。GitHub SSO を有効化する場合だけ、Vercel Functions、Routing Middleware、Environment Variables を使います。
 
 ## 前提
 
@@ -62,7 +62,7 @@ node -e "console.log(crypto.randomUUID().replaceAll('-', '').slice(0, 8))"
    - Build Command: `npm run build`
    - Output Directory: `dist`
    - Install Command: default のままでよい。
-7. Environment Variables は設定しない。
+7. GitHub SSO を使わない場合、Environment Variables は設定しない。使う場合は後述の `GitHub SSO` を先に設定する。
 8. `Deploy` を実行する。
 9. Production URL を開き、画面が表示されることを確認する。
 
@@ -125,9 +125,9 @@ Vercel project を GitHub repo に接続すると、production branch への pus
 - 入力データは各ブラウザの localStorage にあるため、他人が同じ URL を開いても自分の入力済みデータは見えません。
 - Hobby plan は個人・非商用利用向けです。商用利用や大きなアクセスを想定する場合は Pro 以上を検討してください。
 
-## 認証を付けたい場合
+## GitHub SSO
 
-標準構成ではログイン機能はありません。GitHub SSO を付ける場合は、フロントエンドだけではなく、OAuth callback と session cookie を扱う小さなサーバー処理が必要です。
+標準構成ではログイン機能はありません。GitHub SSO を付ける場合は、OAuth callback と session cookie を扱う Vercel Functions と Routing Middleware を使います。
 
 候補:
 
@@ -137,13 +137,61 @@ Vercel project を GitHub repo に接続すると、production branch への pus
 | GitHub OAuth + Vercel Functions + Routing Middleware | GitHub account でログインできる。Vite 構成を保てる。GitHub OAuth App と Vercel Environment Variables が必要。 |
 | Next.js + Auth.js | 認証実装は標準化しやすいが、現在の静的 Vite SPA からの移行コストが大きい。 |
 
-この repo で GitHub SSO を採用する場合の推奨方針:
+この repo の GitHub SSO 方針:
 
 - 既定は公開モードのままにする。
-- `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`AUTH_COOKIE_SECRET`、`AUTH_ALLOWED_GITHUB_USERS` が設定されたときだけ認証を有効化する。
+- `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`AUTH_COOKIE_SECRET`、`AUTH_ALLOWED_GITHUB_USERS` がすべて設定されたときだけ認証を有効化する。
+- 認証関連 environment variable が一部だけ設定された場合は、誤って公開に戻さず 500 error にして fail closed する。
 - GitHub OAuth token は保存せず、認可後に署名済み HttpOnly cookie だけを保存する。
 - Routing Middleware で `/api/auth/*` 以外を保護し、未ログインなら `/api/auth/login` に redirect する。
 - 許可ユーザーは GitHub username allowlist から始める。GitHub org/team 判定は必要になってから追加する。
+
+### GitHub OAuth App
+
+GitHub で OAuth App を作成します。
+
+- Homepage URL: `https://<project-name>.vercel.app`
+- Authorization callback URL: `https://<project-name>.vercel.app/api/auth/callback`
+
+作成後、Client ID と Client Secret を Vercel の Environment Variables に設定します。
+
+### Environment Variables
+
+Vercel project の `Settings` → `Environment Variables` に以下を設定します。値そのものは Git に保存しません。
+
+| Name | 内容 |
+| --- | --- |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App の Client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App の Client Secret |
+| `AUTH_COOKIE_SECRET` | session cookie 署名用 secret。32文字以上 |
+| `AUTH_ALLOWED_GITHUB_USERS` | 許可する GitHub username。カンマまたは空白区切り |
+
+`AUTH_COOKIE_SECRET` の生成例:
+
+```bash
+openssl rand -base64 32
+```
+
+allowlist 例:
+
+```text
+AUTH_ALLOWED_GITHUB_USERS=kuechi
+```
+
+複数ユーザー:
+
+```text
+AUTH_ALLOWED_GITHUB_USERS=kuechi,another-user
+```
+
+### 認証後に扱ってよい情報
+
+SSO と HTTPS は「未ログインの第三者から見えにくくする」「通信経路を保護する」ためのものです。以下は引き続き守ってください。
+
+- secret、token、password、API key は repo、localStorage、画面入力欄に保存しない。
+- 顧客名、private URL、raw log などは、組織ルールで許可された範囲だけ入力する。
+- localStorage は暗号化ストレージではない。共有PC、ブラウザ同期、XSS、端末侵害からは守れない。
+- GitHub OAuth の Client Secret と cookie secret は Vercel Environment Variables にだけ保存する。
 
 ## 参考
 

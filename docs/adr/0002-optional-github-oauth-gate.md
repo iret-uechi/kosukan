@@ -1,6 +1,6 @@
 # ADR 0002: Optional GitHub OAuth gate for private instances
 
-- **Status**: Proposed
+- **Status**: Accepted
 - **Date**: 2026-05-14
 - **Deciders**: k-uechi
 
@@ -43,16 +43,18 @@ ADR 0001 では、このアプリを Vite SPA として Vercel に静的デプ�
 - **pros**: Web app の認証としては標準的な構成に寄せやすい。
 - **cons**: 現在の目的に対して移行コストが大きい。Vite SPA の単純さを失う。
 
-## Decision（提案）
+## Decision
 
 既定は O1 の公開 URL 運用を維持する。ログインが必要な個人インスタンス向けには、O3（GitHub OAuth + Vercel Functions + Routing Middleware）を optional feature として追加する。
 
-認証は、以下の environment variables が設定された場合だけ有効化する。
+認証は、以下の environment variables がすべて設定された場合だけ有効化する。
 
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
 - `AUTH_COOKIE_SECRET`
 - `AUTH_ALLOWED_GITHUB_USERS`
+
+認証関連 environment variable が一部だけ設定された場合は、誤って公開に戻さず fail closed として 500 error を返す。
 
 ## Consequences
 
@@ -61,6 +63,7 @@ ADR 0001 では、このアプリを Vite SPA として Vercel に静的デプ�
 - GitHub OAuth token は保存しない。ログイン後は署名済み HttpOnly cookie で session を表現する。
 - user allowlist 方式から始める。org / team membership 判定は、必要になってから `read:org` scope を追加して検討する。
 - URL を変更すると localStorage origin が変わるため、認証導入や project rename の前後では JSON export/import 手順を案内する。
+- SSO と HTTPS は通信経路と未認証アクセスの保護であり、localStorage を secret store に変えるものではない。
 
 ## Implementation sketch
 
@@ -70,6 +73,23 @@ ADR 0001 では、このアプリを Vite SPA として Vercel に静的デプ�
 4. 許可された user には署名済み HttpOnly cookie をセットする。
 5. `api/auth/logout` で cookie を削除する。
 6. `middleware.ts` で `/api/auth/*` と静的 health path 以外を保護する。
+
+## Implementation
+
+- `server/auth.ts`: auth environment variable validation、HMAC signed session cookie、cookie parsing。
+- `api/auth/login.ts`: GitHub OAuth authorize redirect と state cookie 発行。
+- `api/auth/callback.ts`: authorization code exchange、GitHub user 取得、allowlist 判定、session cookie 発行。
+- `api/auth/logout.ts`: session cookie と OAuth state cookie の削除。
+- `api/auth/session.ts`: Header 表示用の現在 session 取得。
+- `middleware.ts`: 認証有効時に `/api/auth/*` 以外を保護。
+- `src/components/AuthStatus.tsx`: 認証有効時のみ GitHub username と logout link を表示。
+
+## Security notes
+
+- `GITHUB_CLIENT_SECRET` と `AUTH_COOKIE_SECRET` は Vercel Environment Variables にだけ保存する。
+- GitHub OAuth access token は session に保存しない。
+- session cookie は HttpOnly、SameSite=Lax、HTTPS では Secure 属性を付ける。
+- localStorage は端末内の保存領域であり、XSS、共有端末、ブラウザ同期、端末侵害への保護境界ではない。
 
 ## References
 
