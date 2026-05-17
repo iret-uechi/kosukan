@@ -21,7 +21,6 @@ export default {
     const state = createRandomState();
     const authorizeUrl = new URL("https://github.com/login/oauth/authorize");
     authorizeUrl.searchParams.set("client_id", status.config.clientId);
-    authorizeUrl.searchParams.set("redirect_uri", new URL("/api/auth/callback", url).toString());
     authorizeUrl.searchParams.set("scope", "read:user");
     authorizeUrl.searchParams.set("state", state);
 
