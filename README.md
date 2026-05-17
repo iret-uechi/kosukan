@@ -4,6 +4,7 @@
 
 - データは利用者のブラウザ localStorage に保存（バックエンド不要）
 - 静的 SPA として配布、Vercel などへ 1 クリックでデプロイ
+- GitHub SSO は任意。環境変数を設定した個人インスタンスだけ有効化
 - カテゴリ・計画値は `src/constants.ts` でカスタマイズ可能
 
 ## 使い始める
@@ -11,9 +12,14 @@
 ### A. 自分用にデプロイして使う（推奨）
 
 1. このリポジトリをテンプレートとして自身の GitHub アカウントへコピー（GitHub の "Use this template" ボタン）。
-2. コピーした repo を Vercel など静的ホスティングに接続。デフォルト設定（Vite 検出）でビルド可能。
-3. 払い出された URL をブックマーク。データはその URL の localStorage に保存される。
-4. （任意）`src/constants.ts` を編集し、自身の業務カテゴリ・計画工数・対象期間を設定してから push し直す。
+2. Vercel の project name を `workload-tracker-<owner-slug>-<random8>` 形式で決める。
+   - 例: `workload-tracker-kuechi-7f3a9c2e`
+   - `random8` は `openssl rand -hex 4` などで生成する。
+3. コピーした repo を Vercel に接続。Framework は Vite、Build Command は `npm run build`、Output Directory は `dist`。
+4. 払い出された URL をブックマーク。データはその URL の localStorage に保存される。
+5. （任意）`src/constants.ts` を編集し、自身の業務カテゴリ・計画工数・対象期間を設定してから push し直す。
+
+詳しい手順と命名規則は [Vercel デプロイ手順](docs/deployment/vercel.md) を参照してください。
 
 ### B. ローカルで動かす
 

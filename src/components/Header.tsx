@@ -1,6 +1,7 @@
 import type { AppData } from "../types";
 import { HOURS_PER_DAY, DAYS_PER_MONTH } from "../constants";
 import { getTotalPlan } from "../utils/calc";
+import { AuthStatus } from "./AuthStatus";
 
 interface Props {
   data: AppData;
@@ -43,6 +44,7 @@ export function Header({ data }: Props) {
           <div style={{ fontSize: 11, opacity: 0.7 }}>全体消化率</div>
         </div>
       </div>
+      <AuthStatus />
     </header>
   );
 }
