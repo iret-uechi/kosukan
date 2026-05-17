@@ -44,7 +44,7 @@ export default {
       return new Response("Invalid OAuth state.", { status: 400 });
     }
 
-    const tokenResponse = await exchangeCodeForToken(request.url, code, status.config.clientId, status.config.clientSecret);
+    const tokenResponse = await exchangeCodeForToken(code, status.config.clientId, status.config.clientSecret);
     if (!tokenResponse.access_token) {
       return new Response(tokenResponse.error_description ?? tokenResponse.error ?? "GitHub OAuth failed.", {
         status: 401,
@@ -80,7 +80,6 @@ export default {
 };
 
 async function exchangeCodeForToken(
-  requestUrl: string,
   code: string,
   clientId: string,
   clientSecret: string,
@@ -95,7 +94,6 @@ async function exchangeCodeForToken(
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: new URL("/api/auth/callback", requestUrl).toString(),
     }),
   });
 
