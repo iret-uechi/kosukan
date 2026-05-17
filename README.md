@@ -17,8 +17,9 @@
    - `uid8` は UUID から切り出した 8 桁の lowercase hex を使う。
 3. コピーした repo を Vercel に接続。Framework は Vite、Build Command は `npm run build`、Output Directory は `dist`。
 4. Production URL は `https://kosukan-<github-user>-<uid8>.vercel.app` 形式になる。Vercel Dashboard の project `Domains` または deployment 完了画面の `Aliases` でも確認できる。
-5. 払い出された URL をブックマーク。データはその URL の localStorage に保存される。
-6. （任意）`src/constants.ts` を編集し、自身の業務カテゴリ・計画工数・対象期間を設定してから push し直す。
+5. GitHub SSO を使う場合、GitHub OAuth App の callback URL に `https://kosukan-<github-user>-<uid8>.vercel.app/api/auth/callback` を設定する。
+6. 払い出された URL をブックマーク。データはその URL の localStorage に保存される。
+7. （任意）`src/constants.ts` を編集し、自身の業務カテゴリ・計画工数・対象期間を設定してから push し直す。
 
 詳しい手順と命名規則は [Vercel デプロイ手順](docs/deployment/vercel.md) を参照してください。
 

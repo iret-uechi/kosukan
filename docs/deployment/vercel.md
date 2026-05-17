@@ -182,7 +182,16 @@ GitHub で OAuth App を作成します。
 - Homepage URL: `https://<project-name>.vercel.app`
 - Authorization callback URL: `https://<project-name>.vercel.app/api/auth/callback`
 
-作成後、Client ID と Client Secret を Vercel の Environment Variables に設定します。
+`<project-name>` は Vercel の project name です。推奨命名規則では `kosukan-<github-user>-<uid8>` になります。
+
+作成後、Client ID と Client Secret を Vercel の Environment Variables に設定します。GitHub OAuth Apps は callback URL を複数持てないため、Production URL を変更した場合は OAuth App の callback URL も更新してください。
+
+GitHub の認可画面で `The redirect_uri is not associated with this application.` と表示される場合は、以下を確認します。
+
+1. Vercel の `GITHUB_CLIENT_ID` が、編集している GitHub OAuth App の Client ID と一致している。
+2. Authorization callback URL が `https://<project-name>.vercel.app/api/auth/callback` になっている。
+3. 古い project name、Preview URL、deployment 固有 URL、別の Vercel project の URL を callback URL にしていない。
+4. Vercel の Environment Variables を変更した後に、Production を再deployしている。
 
 ### Environment Variables
 
@@ -196,6 +205,8 @@ Vercel project の `Settings` → `Environment Variables` に以下を設定し�
 | `AUTH_ALLOWED_GITHUB_USERS` | 許可する GitHub username。カンマまたは空白区切り |
 
 Target は少なくとも `Production` に設定します。Pull Request preview でも SSO を試す場合は `Preview` にも設定します。
+
+Vercel 側の Deployment Protection は、このアプリ内の GitHub SSO とは別物です。Production URL をアプリ利用者へ公開する場合は、Vercel project の `Settings` → `Deployment Protection` で Production の SSO protection が有効になっていないことを確認してください。有効な場合、アプリの GitHub SSO より前に Vercel account のログイン画面が表示されます。
 
 `AUTH_COOKIE_SECRET` の生成例:
 
