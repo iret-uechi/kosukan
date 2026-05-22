@@ -76,12 +76,13 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
         return;
       }
 
-      // 既存データとマージ（同日・同カテゴリはCSV側で上書き）
+      // CSVにはentry idがないため、内容が完全一致する行だけ重複扱いにする。
+      // 同日・同カテゴリでも別メモの行は、別entryとして保持する。
       const existingMap = new Map(
-        data.entries.map((e) => [`${e.date}_${e.catId}`, e])
+        data.entries.map((e) => [getImportEntryKey(e), e])
       );
       for (const entry of imported) {
-        existingMap.set(`${entry.date}_${entry.catId}`, entry);
+        existingMap.set(getImportEntryKey(entry), entry);
       }
       const merged = [...existingMap.values()];
       onSave({ ...data, entries: merged });
@@ -419,4 +420,13 @@ export function Settings({ data, onSave, onReset, onToast }: Props) {
       </div>
     </div>
   );
+}
+
+function getImportEntryKey(entry: AppData["entries"][number]): string {
+  return [
+    entry.date,
+    entry.catId,
+    entry.hours,
+    entry.memo ?? "",
+  ].join("\u001f");
 }
