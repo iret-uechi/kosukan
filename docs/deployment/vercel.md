@@ -193,6 +193,8 @@ GitHub の認可画面で `The redirect_uri is not associated with this applicat
 3. 古い project name、Preview URL、deployment 固有 URL、別の Vercel project の URL を callback URL にしていない。
 4. Vercel の Environment Variables を変更した後に、Production を再deployしている。
 
+GitHub 認可後に Vercel の `404: NOT_FOUND` / `DEPLOYMENT_NOT_FOUND` が表示される場合も、同じく GitHub OAuth App の callback URL を確認してください。削除済み alias や deployment 固有 URL が登録されていると、認可後に存在しない URL へ戻されます。
+
 ### Environment Variables
 
 Vercel project の `Settings` → `Environment Variables` に以下を設定します。値そのものは Git に保存しません。必ずアプリをホストする同じ Vercel project に設定してください。別 project に設定しても、このアプリの認証は有効になりません。

@@ -1,3 +1,4 @@
+import { next } from "@vercel/functions/middleware";
 import { SESSION_COOKIE, getAuthConfigStatus, parseCookies, verifySession } from "./server/auth.js";
 
 export const config = {
@@ -9,7 +10,7 @@ export default function middleware(request: Request) {
   const status = getAuthConfigStatus();
 
   if (!status.enabled) {
-    return;
+    return next();
   }
 
   if (!status.config) {
@@ -20,7 +21,7 @@ export default function middleware(request: Request) {
   const session = verifySession(cookies.get(SESSION_COOKIE), status.config.cookieSecret);
 
   if (session) {
-    return;
+    return next();
   }
 
   return Response.redirect(new URL("/api/auth/login", request.url), 302);
